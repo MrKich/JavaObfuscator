@@ -1,3 +1,5 @@
+import com.sun.xml.internal.ws.policy.privateutil.PolicyUtils;
+
 import javax.tools.JavaCompiler;
 import javax.tools.ToolProvider;
 import java.io.ByteArrayOutputStream;
@@ -70,12 +72,20 @@ public class Obfuscator {
             return;
         }
 
+        Path tempDir;
+        try {
+            tempDir = Files.createTempDirectory("obfuscator");
+        } catch (IOException e) {
+            System.err.println("Cannot create temp directory: " + e.getMessage());
+            return;
+        }
+
         JavaCompiler compiler = ToolProvider.getSystemJavaCompiler();
-        compiler.run(null, null, null, args[0], "-d", "./");
+        compiler.run(null, null, null, args[0], "-g:none", "-implicit:none", "-d", tempDir.toString());
 
         byte[] data;
         try {
-            data = Files.readAllBytes(Paths.get(args[1] + ".class"));
+            data = Files.readAllBytes(tempDir.resolve(args[1] + ".class"));
         } catch (IOException e) {
             System.err.println("Error while reading compiled data: " + e.getMessage());
             return;
@@ -101,7 +111,6 @@ public class Obfuscator {
 
         try (OutputStream os = Files.newOutputStream(Paths.get(args[2]))) {
             os.write(String.format(STUB, c, Base64.getEncoder().encodeToString(data)).getBytes());
-            Files.delete(Paths.get(args[1] + ".class"));
         } catch (IOException e) {
             System.err.println("Error: " + e.getMessage());
         }
