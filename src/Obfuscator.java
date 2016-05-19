@@ -2,10 +2,7 @@ import com.sun.xml.internal.ws.policy.privateutil.PolicyUtils;
 
 import javax.tools.JavaCompiler;
 import javax.tools.ToolProvider;
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
+import java.io.*;
 import java.nio.ByteBuffer;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -22,10 +19,13 @@ import static java.util.zip.Deflater.BEST_COMPRESSION;
  * Created by azarn on 5/18/16.
  */
 public class Obfuscator {
+    private static String MAP_ENTRY = "        OBFUSCATED_DATA.put(\"%s\", \"%s\");\n";
     private static String STUB =
             "import java.io.ByteArrayOutputStream;\n" +
             "import java.lang.reflect.InvocationTargetException;\n" +
             "import java.util.Base64;\n" +
+            "import java.util.HashMap;\n" +
+            "import java.util.Map;\n" +
             "import java.util.zip.DataFormatException;\n" +
             "import java.util.zip.Inflater;\n" +
             "\n" +
@@ -34,10 +34,19 @@ public class Obfuscator {
             " */\n" +
             "public class JavaObfuscateStub extends ClassLoader {\n" +
             "    private static byte XOR_CONSTANT = %d;\n" +
-            "    private static String OBFUSCATED_DATA = \"%s\";\n" +
+            "    private static Map<String, String> OBFUSCATED_DATA;\n" +
+            "    static {\n" +
+            "        OBFUSCATED_DATA = new HashMap<>();\n" +
+            "%s" +
+            "    }\n" +
             "\n" +
             "    public Class findClass(String name) {\n" +
-            "        byte[] data = Base64.getDecoder().decode(OBFUSCATED_DATA);\n" +
+            "        String class_data = OBFUSCATED_DATA.get(name);\n" +
+            "        if (class_data == null) {\n" +
+            "            return null;\n" +
+            "        }\n" +
+            "\n" +
+            "        byte[] data = Base64.getDecoder().decode(class_data);\n" +
             "        for (int i = 0; i < data.length; ++i) {\n" +
             "            data[i] ^= XOR_CONSTANT;\n" +
             "        }\n" +
@@ -62,9 +71,32 @@ public class Obfuscator {
             "    }\n" +
             "\n" +
             "    public static void main(String args[]) throws NoSuchMethodException, InvocationTargetException, IllegalAccessException {\n" +
-            "        new JavaObfuscateStub().findClass(null).getMethod(\"main\", String[].class).invoke(null, (Object)args);\n" +
+            "        new JavaObfuscateStub().findClass(\"%s\").getMethod(\"main\", String[].class).invoke(null, (Object)args);\n" +
             "    }\n" +
             "}\n";
+
+    public static String obfuscate(Path file, byte xorConstant) throws IOException {
+        byte[] data = Files.readAllBytes(file);
+
+        ByteArrayOutputStream res = new ByteArrayOutputStream();
+        Deflater deflater = new Deflater();
+        deflater.setInput(data);
+        deflater.finish();
+        deflater.setLevel(BEST_COMPRESSION);
+
+        byte[] buf = new byte[1024];
+        while (!deflater.finished()) {
+            int count = deflater.deflate(buf);
+            res.write(buf, 0, count);
+        }
+
+        data = res.toByteArray();
+        for (int i = 0; i < data.length; ++i) {
+            data[i] ^= xorConstant;
+        }
+
+        return Base64.getEncoder().encodeToString(data);
+    }
 
     public static void main(String args[]) {
         if (args.length != 3) {
@@ -83,34 +115,26 @@ public class Obfuscator {
         JavaCompiler compiler = ToolProvider.getSystemJavaCompiler();
         compiler.run(null, null, null, args[0], "-g:none", "-implicit:none", "-d", tempDir.toString());
 
-        byte[] data;
+        int c = new Random().nextInt(256) - 128;
+        StringBuilder sb = new StringBuilder();
         try {
-            data = Files.readAllBytes(tempDir.resolve(args[1] + ".class"));
-        } catch (IOException e) {
-            System.err.println("Error while reading compiled data: " + e.getMessage());
+            Files.list(tempDir).filter(path -> path.getFileName().toString().endsWith(".class")).forEach(path -> {
+                String obfs;
+                try {
+                    obfs = obfuscate(path, (byte) c);
+                } catch (IOException e) {
+                    throw new UncheckedIOException(e);
+                }
+                String classname = path.getFileName().toString();
+                sb.append(String.format(MAP_ENTRY, classname.substring(0, classname.length() - 6), obfs));
+            });
+        } catch (IOException | UncheckedIOException e) {
+            System.err.println("Cannot obfuscate file, error: " + e.getMessage());
             return;
         }
 
-        ByteArrayOutputStream res = new ByteArrayOutputStream();
-        Deflater deflater = new Deflater();
-        deflater.setInput(data);
-        deflater.finish();
-        deflater.setLevel(BEST_COMPRESSION);
-
-        byte[] buf = new byte[1024];
-        while (!deflater.finished()) {
-            int count = deflater.deflate(buf);
-            res.write(buf, 0, count);
-        }
-
-        data = res.toByteArray();
-        int c = new Random().nextInt(256) - 128;
-        for (int i = 0; i < data.length; ++i) {
-            data[i] ^= (byte) c;
-        }
-
         try (OutputStream os = Files.newOutputStream(Paths.get(args[2]))) {
-            os.write(String.format(STUB, c, Base64.getEncoder().encodeToString(data)).getBytes());
+            os.write(String.format(STUB, c, sb.toString(), args[1]).getBytes());
         } catch (IOException e) {
             System.err.println("Error: " + e.getMessage());
         }

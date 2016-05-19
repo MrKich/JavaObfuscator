@@ -2,6 +2,17 @@
  * Created by azarn on 5/18/16.
  */
 public class TestClass {
+    class TestInnerClass {
+        private String testInner;
+
+        TestInnerClass() {
+            testInner = "testInner";
+        }
+
+        void inner_go() {
+            System.out.println(testInner);
+        }
+    }
     private String test;
 
     TestClass(String s) {
@@ -10,6 +21,8 @@ public class TestClass {
 
     public void go() {
         System.out.println("My String test is " + test);
+        System.out.println("[INNER]");
+        new TestInnerClass().inner_go();
     }
 
     public static void main(String args[]) {
