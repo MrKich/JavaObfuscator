@@ -8,16 +8,8 @@ import java.util.zip.Inflater;
  * Created by azarn on 5/18/16.
  */
 public class JavaObfuscateStub extends ClassLoader {
-    private static byte XOR_CONSTANT = 0;
-    private static String OBFUSCATED_DATA = "eNp1Um1P01AYPXcdu2vtcOtekBelU1664pwSP5BITHAIX4YYN02WfSAX1iyF0i30YsK/8S9g" +
-                                            "YEsk4Qf4k/xgfC5bYgy1H56ec59zTp/cpz9//7gF8BrraTxLY4ljhWOVw+VY43jOUdWhoagj" +
-                                            "jRmDUF6VgoEpPDKQgmWAqzOOkiqzJhYxr8pjE45CDp6aqGDBRA1lEy9V4xXmGApOpXEsvopa" +
-                                            "IMJerSnP/LD3hkFzKl8Yqs793n35u3M/6Hpn5CrG6Smn5HTiG6lNP/TlW4Zkvd/1KGAs8/u1" +
-                                            "j6SRpPTEKQVbcTNaexf2mNjSi6TtRzbD9If9g+33O1ufG62DrU+7DJmmFEcne2LQEocBfUJv" +
-                                            "kbYeiChiyHficpmgwcRg4IVdksQMxJD9a9s/PPaOJMPMf67lH3HzIpIe+ZOnwg/plvvn5OQD" +
-                                            "FR0QT8v+2IsyrTdFPwRDQu2OkEaI9kknNrESsQS9DXeEaXftGvol1KPU8xPNCpKEgLnvMG7A" +
-                                            "2xYb4aF7BX2I7BC5ITJjj44XeDLxbEw8Zfc2+Q25G2htV1sf4cEI5qViVmJC7oZbpjoF9gsF" +
-                                            "4A9YXpuw";
+    private static byte XOR_CONSTANT = -61;
+    private static String OBFUSCATED_DATA = "uxm2kRitEIPT/ihbO5Hk6o1QsYoCrnr77a5jN8ZCU4livoqY48JqIWIZ52gLBnJgG4IpHDMF8MvRSok+w/3J8iiHl4NTJl5ecPCkNQ8NTFwcDMKvogiH3dbA5VXPHwOOzk3K1tbeCBFtC6YWB+4fFbMEZ3N4sbK2l/a7z6nhIUcCbVwzzH/VM3OYqOfA/C/9pQv9MoD8ugmTsTz+bX1mJ15r4NvJtvzXxACdiM9Zf9bTYbfgRU9YBTd73PFXHrRw+rFOR3QcLDA99xavhwCCmC85EQr0KrX4wkwgzlqvIvEJ1clbFHOlIt0V2tU8pb71N0BN21NlPpCkwfqRZyAETUbOF+8fBMDOWNXdAaXzvRRTN3VG0QmXOiMzOzpIHi70NiUyNSj+RTpI+URu0BKNPUPZZLLhuWf62RGCquEWTKnsar+BVNN/5NgJOL7StdsVpPZ3PdzmV2vkEsehm7NocB1p+2DhQBVUndOh2rGPw7nZGv0ZpivkekfXqiTSbVP2fvJbdDXOCST3uUIVv9loEt8q8yugcYAQf4S3BQvtvoIlzykS21QvL8tZNNbJWtI30k/I6fDuoWJB39LuIQlXJdZSiFmWLJ8+SyHaD+DscPoFH8sV5NdnrCTlbeeQkfFYUYOZcbHpS6VGLbZW09aJuk0rbWZSFLzCZBNkmQ==";
 
     public Class findClass(String name) {
         byte[] data = Base64.getDecoder().decode(OBFUSCATED_DATA);
